@@ -1,0 +1,31 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build output
+/build/
+/bin/
+/dist/
+
+# Vendor directory (wenn du go mod vendor benutzt)
+vendor/
+
+# Dependency directories (Go Modules)
+go.sum
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+
+# OS-spezifisch
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
