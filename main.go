@@ -29,7 +29,9 @@ func main() {
         protected.GET("/me", handlers.Me)
         protected.GET("/mitarbeiter", handlers.GetMitarbeiter)
         protected.GET("/arbeitszeiten/:id", handlers.GetArbeitszeiten)
-        protected.POST("/arbeitszeiten", handlers.CreateOrUpdateArbeitszeit)
+        protected.POST("/arbeitszeiten", handlers.CreateArbeitszeit)       // für NEU anlegen
+        protected.PUT("/arbeitszeiten", handlers.UpdateArbeitszeit)        // für BEARBEITEN
+
 
         // Neue Endpunkte für den Export der Berichte
         protected.GET("/export/monat", handlers.ExportMonat)

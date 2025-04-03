@@ -77,8 +77,7 @@ func ExportMonatPDF(c *gin.Context) {
     }
 
     pdf := gofpdf.New("P", "mm", "A4", "")
-    pdf.AddUTF8Font("DejaVu", "", "./fonts/DejaVuSans.ttf")
-    pdf.SetFont("DejaVu", "", 12)
+    pdf.SetFont("Arial", "", 12)
     pdf.AddPage()
 
     // Titel
@@ -86,7 +85,7 @@ func ExportMonatPDF(c *gin.Context) {
     pdf.Ln(4)
 
     // Tabellenkopf
-    pdf.SetFont("DejaVu", "B", 11)
+    pdf.SetFont("Arial", "B", 11)
     pdf.CellFormat(35, 8, "Datum", "1", 0, "C", false, 0, "")
     pdf.CellFormat(25, 8, "Start", "1", 0, "C", false, 0, "")
     pdf.CellFormat(25, 8, "Ende", "1", 0, "C", false, 0, "")
@@ -94,7 +93,7 @@ func ExportMonatPDF(c *gin.Context) {
     pdf.CellFormat(25, 8, "Pause (Min.)", "1", 1, "C", false, 0, "")
 
     // Tabelleninhalt
-    pdf.SetFont("DejaVu", "", 10)
+    pdf.SetFont("Arial", "", 10)
     for _, r := range records {
         pdf.CellFormat(35, 8, r.Datum.Format("02.01.2006"), "1", 0, "C", false, 0, "")
         pdf.CellFormat(25, 8, r.Anfangszeit, "1", 0, "C", false, 0, "")
@@ -105,7 +104,7 @@ func ExportMonatPDF(c *gin.Context) {
 
     // Summenzeile
     pdf.Ln(5)
-    pdf.SetFont("DejaVu", "B", 11)
+    pdf.SetFont("Arial", "B", 11)
     pdf.CellFormat(115, 8, "Gesamtstunden", "1", 0, "R", false, 0, "")
     pdf.CellFormat(35, 8, fmt.Sprintf("%.2f Stunden", summe), "1", 1, "C", false, 0, "")
 
@@ -114,6 +113,8 @@ func ExportMonatPDF(c *gin.Context) {
     c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=Monatsbericht_%s_%02d_%d.pdf", nachname, month, year))
     _ = pdf.Output(c.Writer)
 }
+
+
 
 
 
