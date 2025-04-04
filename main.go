@@ -22,18 +22,19 @@ func main() {
     r.POST("/register", handlers.Register)
     r.POST("/login", handlers.Login)
 
-    // Geschützte Routen
+    // 🔐 Öffentlich zugänglicher Passwort-Vergessen-Endpunkt
+    r.POST("/api/passwort-vergessen", handlers.PasswortVergessenHandler)
+
+    // 🔒 Geschützte Routen
     protected := r.Group("/api")
     protected.Use(middleware.AuthMiddleware())
     {
         protected.GET("/me", handlers.Me)
         protected.GET("/mitarbeiter", handlers.GetMitarbeiter)
         protected.GET("/arbeitszeiten/:id", handlers.GetArbeitszeiten)
-        protected.POST("/arbeitszeiten", handlers.CreateArbeitszeit)       // für NEU anlegen
-        protected.PUT("/arbeitszeiten", handlers.UpdateArbeitszeit)        // für BEARBEITEN
+        protected.POST("/arbeitszeiten", handlers.CreateArbeitszeit)
+        protected.PUT("/arbeitszeiten", handlers.UpdateArbeitszeit)
 
-
-        // Neue Endpunkte für den Export der Berichte
         protected.GET("/export/monat", handlers.ExportMonat)
         protected.GET("/export/jahr", handlers.ExportJahr)
         protected.GET("/export/monat/pdf", handlers.ExportMonatPDF)
