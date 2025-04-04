@@ -10,6 +10,7 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/phpdave11/gofpdf" // <--- PDF Bibliothek
     "zeiterfassung-backend/service"
+
 )
 
 // ------------------------
@@ -77,46 +78,37 @@ func ExportMonatPDF(c *gin.Context) {
     }
 
     pdf := gofpdf.New("P", "mm", "A4", "")
-    pdf.SetFont("Arial", "", 12)
     pdf.AddPage()
+    pdf.SetFont("Arial", "", 12)
 
-    // Titel
-    pdf.CellFormat(0, 10, fmt.Sprintf("Monatsbericht für %s - %02d/%d", nachname, month, year), "", 1, "C", false, 0, "")
-    pdf.Ln(4)
+    title := fmt.Sprintf("Monatsbericht für %s - %02d/%d", nachname, month, year)
+    pdf.Cell(0, 10, title)
+    pdf.Ln(12)
 
-    // Tabellenkopf
-    pdf.SetFont("Arial", "B", 11)
-    pdf.CellFormat(35, 8, "Datum", "1", 0, "C", false, 0, "")
-    pdf.CellFormat(25, 8, "Start", "1", 0, "C", false, 0, "")
-    pdf.CellFormat(25, 8, "Ende", "1", 0, "C", false, 0, "")
-    pdf.CellFormat(35, 8, "Arbeitszeit (h)", "1", 0, "C", false, 0, "")
-    pdf.CellFormat(25, 8, "Pause (Min.)", "1", 1, "C", false, 0, "")
+    // Tabellen-Header
+    headers := []string{"Datum", "Start", "Ende", "Arbeitszeit (h)", "Pause (min)"}
+    for _, h := range headers {
+        pdf.CellFormat(40, 8, h, "1", 0, "C", false, 0, "")
+    }
+    pdf.Ln(-1)
 
-    // Tabelleninhalt
-    pdf.SetFont("Arial", "", 10)
+    // Zeilen mit Daten
     for _, r := range records {
-        pdf.CellFormat(35, 8, r.Datum.Format("02.01.2006"), "1", 0, "C", false, 0, "")
-        pdf.CellFormat(25, 8, r.Anfangszeit, "1", 0, "C", false, 0, "")
-        pdf.CellFormat(25, 8, r.Endzeit, "1", 0, "C", false, 0, "")
-        pdf.CellFormat(35, 8, fmt.Sprintf("%.2f", r.Arbeitszeit), "1", 0, "C", false, 0, "")
-        pdf.CellFormat(25, 8, fmt.Sprintf("%d", r.Pause), "1", 1, "C", false, 0, "")
+        pdf.CellFormat(40, 8, r.Datum.Format("02.01.2006"), "1", 0, "", false, 0, "")
+        pdf.CellFormat(40, 8, r.Anfangszeit, "1", 0, "", false, 0, "")
+        pdf.CellFormat(40, 8, r.Endzeit, "1", 0, "", false, 0, "")
+        pdf.CellFormat(40, 8, fmt.Sprintf("%.2f", r.Arbeitszeit), "1", 0, "", false, 0, "")
+        pdf.CellFormat(40, 8, fmt.Sprintf("%d", r.Pause), "1", 0, "", false, 0, "")
+        pdf.Ln(-1)
     }
 
-    // Summenzeile
-    pdf.Ln(5)
-    pdf.SetFont("Arial", "B", 11)
-    pdf.CellFormat(115, 8, "Gesamtstunden", "1", 0, "R", false, 0, "")
-    pdf.CellFormat(35, 8, fmt.Sprintf("%.2f Stunden", summe), "1", 1, "C", false, 0, "")
+    pdf.Ln(10)
+    pdf.Cell(0, 10, fmt.Sprintf("Gesamtsumme: %.2f Stunden", summe))
 
-    // PDF zurückgeben
     c.Header("Content-Type", "application/pdf")
     c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=Monatsbericht_%s_%02d_%d.pdf", nachname, month, year))
     _ = pdf.Output(c.Writer)
 }
-
-
-
-
 
 
 // ------------------------
