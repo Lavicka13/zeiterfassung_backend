@@ -1,12 +1,20 @@
 package utils
 
 import (
+    "os"
     "time"
 
     "github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("geheim") // später aus .env holen!
+// getJWTKey ruft den JWT-Schlüssel aus der Umgebungsvariable ab oder verwendet einen Fallback-Wert
+func getJWTKey() []byte {
+    key := os.Getenv("JWT_SECRET")
+    if key == "" {
+        key = "geheim" // Fallback für Entwicklung, aber nicht für Produktion empfohlen!
+    }
+    return []byte(key)
+}
 
 type Claims struct {
     NutzerID  uint
@@ -26,13 +34,13 @@ func GenerateJWT(id uint, email string, rechte uint) (string, error) {
         },
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtKey)
+    return token.SignedString(getJWTKey())
 }
 
 func ParseToken(tokenStr string) (*Claims, error) {
     claims := &Claims{}
     token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-        return jwtKey, nil
+        return getJWTKey(), nil
     })
     if err != nil || !token.Valid {
         return nil, err
