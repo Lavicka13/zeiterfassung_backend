@@ -30,8 +30,11 @@ func main() {
     r.POST("/register", handlers.Register)
     r.POST("/login", handlers.Login)
 
-    // Passwort-Vergessen-Endpunkt
+    // Passwort-Vergessen-Endpunkt (öffentlicher Zugang)
     r.POST("/api/passwort-vergessen", handlers.PasswortVergessenHandler)
+    
+    // Email-Überprüfung-Endpunkt (öffentlicher Zugang) 
+    r.GET("/api/nutzer/email-exists", handlers.CheckEmailExists)
 
     // Geschützte Routen
     protected := r.Group("/api")
@@ -41,10 +44,10 @@ func main() {
         
         // Nutzerverwaltung
         protected.GET("/mitarbeiter", handlers.GetMitarbeiter)
-        protected.POST("/mitarbeiter", handlers.CreateNutzer)     // Neu
-        protected.PUT("/mitarbeiter/:id", handlers.UpdateNutzer)  // Neu
-        protected.DELETE("/mitarbeiter/:id", handlers.DeleteNutzer) // Neu
-        protected.PUT("/mitarbeiter/:id/passwort", handlers.ResetPassword) // Neu
+        protected.POST("/mitarbeiter", handlers.CreateNutzer)
+        protected.PUT("/mitarbeiter/:id", handlers.UpdateNutzer)
+        protected.DELETE("/mitarbeiter/:id", handlers.DeleteNutzer)
+        protected.PUT("/mitarbeiter/:id/passwort", handlers.ResetPassword)
         
         // Arbeitszeiten
         protected.GET("/arbeitszeiten/:id", handlers.GetArbeitszeiten)

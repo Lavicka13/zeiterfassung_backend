@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"os"
 	"net/smtp"
+	"regexp"
+	"zeiterfassung-backend/config"
+	"zeiterfassung-backend/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,12 +23,33 @@ func PasswortVergessenHandler(c *gin.Context) {
 		return
 	}
 
+	// Email-Format validieren
+	if !isValidEmail(request.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ungültiges E-Mail-Format"})
+		return
+	}
+
+	// Prüfen, ob der Nutzer existiert
+	var nutzer models.Nutzer
+	result := config.DB.Where("email = ?", request.Email).First(&nutzer)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Es wurde kein Konto mit dieser E-Mail-Adresse gefunden"})
+		return
+	}
+
+	// E-Mail an Admin senden
 	if err := sendeAdminMail(request.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "E-Mail konnte nicht gesendet werden"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Der Administrator wurde benachrichtigt"})
+}
+
+// E-Mail-Format validieren mit regulärem Ausdruck
+func isValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
 }
 
 func sendeAdminMail(userEmail string) error {
