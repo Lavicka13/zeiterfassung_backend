@@ -25,9 +25,26 @@ func DeleteArbeitszeit(c *gin.Context) {
         return
     }
     
-    // Lösche die Arbeitszeit
-    if err := config.DB.Delete(&arbeitszeit).Error; err != nil {
+    // Beginne eine Transaktion
+    tx := config.DB.Begin()
+    
+    // Lösche zuerst alle zugehörigen Audit-Einträge
+    if err := tx.Exec("DELETE FROM arbeitszeiten_audit WHERE arbeitszeit_id = ?", id).Error; err != nil {
+        tx.Rollback()
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Fehler beim Löschen der Audit-Einträge"})
+        return
+    }
+    
+    // Lösche dann die Arbeitszeit
+    if err := tx.Delete(&arbeitszeit).Error; err != nil {
+        tx.Rollback()
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Löschen fehlgeschlagen"})
+        return
+    }
+    
+    // Schließe die Transaktion erfolgreich ab
+    if err := tx.Commit().Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaktion konnte nicht abgeschlossen werden"})
         return
     }
     
