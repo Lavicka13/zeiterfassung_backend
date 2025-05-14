@@ -48,6 +48,7 @@ func main() {
         protected.PUT("/mitarbeiter/:id", handlers.UpdateNutzer)
         protected.DELETE("/mitarbeiter/:id", handlers.DeleteNutzer)
         protected.PUT("/mitarbeiter/:id/passwort", handlers.ResetPassword)
+        protected.DELETE("/arbeitszeiten/:id", handlers.DeleteArbeitszeit)
         
         // Arbeitszeiten
         protected.GET("/arbeitszeiten/:id", handlers.GetArbeitszeiten)
