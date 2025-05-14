@@ -17,9 +17,9 @@ func getJWTKey() []byte {
 }
 
 type Claims struct {
-    NutzerID  uint
-    RechteID  uint
-    Email     string
+    NutzerID  uint   `json:"nutzer_id"`
+    RechteID  uint   `json:"rechte_id"`
+    Email     string `json:"email"`
     jwt.RegisteredClaims
 }
 
