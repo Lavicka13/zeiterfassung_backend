@@ -120,7 +120,7 @@ func UpdateNutzer(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// DeleteNutzer löscht einen Nutzer
+// DeleteNutzer löscht einen Nutzer und alle verknüpften Daten
 func DeleteNutzer(c *gin.Context) {
 	id := c.Param("id")
 	
@@ -130,13 +130,37 @@ func DeleteNutzer(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Nutzer nicht gefunden"})
 		return
 	}
-
-	// Lösche den Nutzer
-	if err := config.DB.Delete(&user).Error; err != nil {
+	
+	// Beginne eine Transaktion
+	tx := config.DB.Begin()
+	
+	// Lösche zuerst alle Audit-Einträge für die Arbeitszeiten des Nutzers
+	if err := tx.Exec("DELETE FROM arbeitszeiten_audit WHERE arbeitszeit_id IN (SELECT id FROM arbeitszeiten WHERE nutzer_id = ?)", id).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fehler beim Löschen der Audit-Einträge"})
+		return
+	}
+	
+	// Lösche alle Arbeitszeiten des Nutzers
+	if err := tx.Exec("DELETE FROM arbeitszeiten WHERE nutzer_id = ?", id).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Fehler beim Löschen der Arbeitszeiten"})
+		return
+	}
+	
+	// Lösche dann den Nutzer
+	if err := tx.Delete(&user).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Löschen fehlgeschlagen"})
 		return
 	}
-
+	
+	// Schließe die Transaktion erfolgreich ab
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaktion konnte nicht abgeschlossen werden"})
+		return
+	}
+	
 	c.JSON(http.StatusOK, gin.H{"message": "Nutzer erfolgreich gelöscht"})
 }
 
