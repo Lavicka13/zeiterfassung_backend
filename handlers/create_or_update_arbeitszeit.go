@@ -1,3 +1,4 @@
+// handlers/create_or_update_arbeitszeit.go - Aktualisierte Version
 package handlers
 
 import (
@@ -31,6 +32,14 @@ func CreateArbeitszeit(c *gin.Context) {
     datumParsed, err := time.Parse("2006-01-02", eingabe.Datum)
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Ungültiges Datum, Format: YYYY-MM-DD"})
+        return
+    }
+
+    // Prüfen, ob das Datum nicht älter als 3 Monate ist
+    if !utils.IsEditAllowed(datumParsed) {
+        c.JSON(http.StatusForbidden, gin.H{
+            "error": "Einträge können nur bis zu 3 Monate rückwirkend erstellt werden.",
+        })
         return
     }
 
@@ -68,7 +77,7 @@ func CreateArbeitszeit(c *gin.Context) {
 }
 
 // --------------------------
-// Update + Protokoll
+// Update + Protokoll + 3-Monats-Limit
 // --------------------------
 func UpdateArbeitszeit(c *gin.Context) {
     var eingabe struct {
@@ -86,6 +95,14 @@ func UpdateArbeitszeit(c *gin.Context) {
     var arbeitszeit models.Arbeitszeit
     if err := config.DB.First(&arbeitszeit, eingabe.ID).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Eintrag nicht gefunden"})
+        return
+    }
+
+    // Prüfen, ob der Eintrag noch bearbeitet werden darf (3-Monats-Limit)
+    if !utils.IsEditAllowed(arbeitszeit.Datum) {
+        c.JSON(http.StatusForbidden, gin.H{
+            "error": "Dieser Eintrag ist älter als 3 Monate und kann nicht mehr bearbeitet werden.",
+        })
         return
     }
 
@@ -115,11 +132,10 @@ func UpdateArbeitszeit(c *gin.Context) {
         return
     }
 
-    // Änderung protokollieren (hier solltest du später die Audit-Tabelle anpassen)
+    // Änderung protokollieren
     for _, cng := range changes {
         config.DB.Exec(`INSERT INTO arbeitszeiten_audit (arbeitszeit_id, nutzer_id, feld, alter_wert, neuer_wert, bearbeitet_am) VALUES (?, ?, ?, ?, ?, ?)`,
             arbeitszeit.ID, eingabe.Bearbeiter, "manuell", cng, "", jetzt)
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "Arbeitszeit aktualisiert", "changes": changes})
-}
+    c.JSON(http.StatusOK, gin.H{"message": "Arbeitszeit aktualisiert", "changes": changes})}

@@ -1,15 +1,17 @@
-// handlers/delete_arbeitszeit.go
+// handlers/delete_arbeitszeit.go - Aktualisierte Version
 package handlers
 
 import (
     "net/http"
     "zeiterfassung-backend/config"
     "zeiterfassung-backend/models"
+    "zeiterfassung-backend/utils"
 
     "github.com/gin-gonic/gin"
 )
 
 // DeleteArbeitszeit löscht einen Arbeitszeiteintrag anhand seiner ID
+// Berücksichtigt dabei das 3-Monats-Limit
 func DeleteArbeitszeit(c *gin.Context) {
     id := c.Param("id")
     
@@ -22,6 +24,14 @@ func DeleteArbeitszeit(c *gin.Context) {
     var arbeitszeit models.Arbeitszeit
     if err := config.DB.First(&arbeitszeit, id).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Arbeitszeit nicht gefunden"})
+        return
+    }
+    
+    // Prüfen, ob der Eintrag noch gelöscht werden darf (3-Monats-Limit)
+    if !utils.IsEditAllowed(arbeitszeit.Datum) {
+        c.JSON(http.StatusForbidden, gin.H{
+            "error": "Dieser Eintrag ist älter als 3 Monate und kann nicht mehr gelöscht werden.",
+        })
         return
     }
     
