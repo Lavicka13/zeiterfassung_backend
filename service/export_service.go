@@ -1,3 +1,4 @@
+// service/export_service.go - Korrigierte Version
 package service
 
 import (
@@ -13,6 +14,28 @@ type ReportRecord struct {
     Endzeit      string
     Arbeitszeit  float64
     Pause        int
+}
+
+// calculateWorkingHours berechnet die Arbeitszeit korrekt, auch über Mitternacht hinaus
+func calculateWorkingHours(start, end time.Time, pause int) float64 {
+    // Wenn Endzeit vor Startzeit liegt, füge einen Tag hinzu
+    if end.Before(start) {
+        end = end.Add(24 * time.Hour)
+    }
+    
+    // Berechne die Gesamtzeit in Stunden
+    totalHours := end.Sub(start).Hours()
+    
+    // Ziehe die Pause in Stunden ab
+    pauseHours := float64(pause) / 60.0
+    workingHours := totalHours - pauseHours
+    
+    // Stelle sicher, dass das Ergebnis nicht negativ ist
+    if workingHours < 0 {
+        workingHours = 0
+    }
+    
+    return workingHours
 }
 
 // GetMonthlyReportData lädt alle Arbeitszeiten eines Monats
@@ -41,11 +64,10 @@ func GetMonthlyReportData(year int, month int, userID uint) ([]ReportRecord, flo
 
         if a.Endzeit != nil {
             endzeit = a.Endzeit.Format("15:04")
-            dauer = a.Endzeit.Sub(a.Anfangszeit).Hours() - float64(a.Pause)/60
-            if dauer < 0 {
-                dauer = 0
-            }
-            summe += dauer // ⬅️ summiert direkt mit
+            
+            // Verwende die neue Berechnungsfunktion
+            dauer = calculateWorkingHours(a.Anfangszeit, *a.Endzeit, a.Pause)
+            summe += dauer
         }
 
         record := ReportRecord{
@@ -61,7 +83,6 @@ func GetMonthlyReportData(year int, month int, userID uint) ([]ReportRecord, flo
 
     return records, summe, nil
 }
-
 
 func GetYearlyReportData(year int, userID uint) ([]ReportRecord, float64, error) {
     var arbeitszeiten []models.Arbeitszeit
@@ -87,11 +108,10 @@ func GetYearlyReportData(year int, userID uint) ([]ReportRecord, float64, error)
 
         if a.Endzeit != nil {
             endzeit = a.Endzeit.Format("15:04")
-            dauer = a.Endzeit.Sub(a.Anfangszeit).Hours() - float64(a.Pause)/60
-            if dauer < 0 {
-                dauer = 0
-            }
-            summe += dauer // summiert gleich mit
+            
+            // Verwende die neue Berechnungsfunktion
+            dauer = calculateWorkingHours(a.Anfangszeit, *a.Endzeit, a.Pause)
+            summe += dauer
         }
 
         record := ReportRecord{
@@ -107,4 +127,3 @@ func GetYearlyReportData(year int, userID uint) ([]ReportRecord, float64, error)
 
     return records, summe, nil
 }
-
